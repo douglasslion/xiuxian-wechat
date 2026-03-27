@@ -732,6 +732,7 @@ function startCultivation() {
  * 停止修炼API调用
  * @returns {Promise<Object>} 停止修炼结果
  * 修复标识: FIX_CULTIVATION_20260327
+ * 修复标识: FIX_SAVE_CULTIVATION_20260327
  */
 function stopCultivation() {
     return new Promise((resolve, reject) => {
@@ -773,6 +774,10 @@ function stopCultivation() {
                         console.log('修炼状态已更新:', data);
                     }
                     
+                    // 重新从服务器获取最新的角色信息（包括修炼值）
+                    console.log('重新获取最新角色信息...');
+                    loadPlayerInfo();
+                    
                     wx.showToast({ title: '停止修炼成功' });
                     resolve(data);
                 } else {
@@ -792,6 +797,510 @@ function stopCultivation() {
             }
         });
     });
+}
+
+// ==================== 页面状态管理 ====================
+
+/**
+ * 当前显示的页面
+ * 修复标识: FIX_PLAYER_PAGE_20260327
+ */
+var currentPage = 'home'; // 'home', 'attributes', 'skills', etc.
+
+/**
+ * 切换到指定页面
+ * @param {string} page - 页面名称
+ */
+function switchToPage(page) {
+    currentPage = page;
+    console.log('切换到页面:', page);
+}
+
+/**
+ * 返回主页
+ */
+function goBackToHome() {
+    currentPage = 'home';
+    console.log('返回主页');
+}
+
+/**
+ * 显示用户属性页面（页面形式，非弹窗）
+ * 修复标识: FIX_PLAYER_PAGE_20260327
+ */
+function showPlayerAttributesPage() {
+    switchToPage('attributes');
+}
+
+/**
+ * 绘制角色属性页面
+ * 修复标识: FIX_PLAYER_PAGE_20260327
+ */
+function drawAttributesPage() {
+    if (!gameEngine || !gameEngine.state || !gameEngine.state.data) {
+        return;
+    }
+
+    const state = gameEngine.state.data;
+    const player = state.player || {};
+    const realm = state.realm || {};
+    const root = player.root || {};
+    const baseAttributes = player.baseAttributes || {};
+    const attributes = player.attributes || {};
+
+    // 页面背景
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(0, 0, screenWidth, screenHeight);
+
+    // 顶部导航栏
+    const navHeight = 50;
+    const safeAreaTop = 50;
+    
+    // 返回按钮
+    drawRoundRect(15, safeAreaTop + 10, 60, 30, 15, '#4a4a4a');
+    drawText('< 返回', 45, safeAreaTop + 16, 14, '#ffffff', 'center');
+    
+    // 页面标题
+    drawText('角色属性', screenWidth / 2, safeAreaTop + 16, 18, '#d4a853', 'center');
+
+    // 内容区域起始Y坐标
+    const contentY = safeAreaTop + navHeight + 20;
+    const contentX = 15;
+    const contentWidth = screenWidth - 30;
+
+    // ==================== 基本信息区域 ====================
+    const infoHeight = 100;
+    drawRoundRect(contentX, contentY, contentWidth, infoHeight, 8, '#4a4a4a');
+    
+    // 头像
+    const avatarSize = 60;
+    const avatarX = contentX + 15;
+    const avatarY = contentY + 20;
+    
+    ctx.beginPath();
+    ctx.arc(avatarX + avatarSize/2, avatarY + avatarSize/2, avatarSize/2, 0, Math.PI * 2);
+    ctx.fillStyle = '#5a5a5a';
+    ctx.fill();
+    
+    if (player.avatar || playerInfo.avatar) {
+        try {
+            const avatarImage = wx.createImage();
+            avatarImage.src = player.avatar || playerInfo.avatar;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(avatarX + avatarSize/2, avatarY + avatarSize/2, avatarSize/2 - 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(avatarImage, avatarX, avatarY, avatarSize, avatarSize);
+            ctx.restore();
+        } catch (e) {
+            drawText('头像', avatarX + avatarSize/2, avatarY + avatarSize/2 - 6, 14, '#999999', 'center');
+        }
+    } else {
+        drawText('头像', avatarX + avatarSize/2, avatarY + avatarSize/2 - 6, 14, '#999999', 'center');
+    }
+    
+    // 姓名和ID
+    drawText(player.name || playerInfo.name || '修仙者', avatarX + avatarSize + 15, avatarY + 5, 16, '#ffffff');
+    drawText('ID: ' + (player.id || playerInfo.id || '000000'), avatarX + avatarSize + 15, avatarY + 30, 12, '#999999');
+    
+    // 境界
+    const realmText = (realm.name || '凡人境') + ' · ' + (realm.currentLayer || 1) + '层';
+    drawText(realmText, avatarX + avatarSize + 15, avatarY + 50, 14, '#d4a853');
+
+    // ==================== 跟脚信息区域 ====================
+    const rootY = contentY + infoHeight + 15;
+    const rootHeight = 80;
+    drawRoundRect(contentX, rootY, contentWidth, rootHeight, 8, '#4a4a4a');
+    
+    drawText('跟脚', contentX + 15, rootY + 12, 14, '#d4a853');
+    
+    let spiritRootInfo = '未知';
+    if (root.name) {
+        spiritRootInfo = root.name;
+        if (root.bonus) {
+            spiritRootInfo += ' (修炼加成: ' + (root.bonus * 100).toFixed(0) + '%)';
+        }
+    }
+    drawText(spiritRootInfo, contentX + 15, rootY + 40, 14, '#ffffff');
+    
+    if (root.description) {
+        drawText(root.description, contentX + 15, rootY + 60, 11, '#999999');
+    }
+    
+    // 刷新跟脚按钮
+    const refreshBtnWidth = 80;
+    const refreshBtnHeight = 30;
+    const refreshBtnX = contentX + contentWidth - refreshBtnWidth - 15;
+    const refreshBtnY = rootY + 25;
+    drawRoundRect(refreshBtnX, refreshBtnY, refreshBtnWidth, refreshBtnHeight, 15, '#d4a853');
+    drawText('刷新跟脚', refreshBtnX + refreshBtnWidth/2, refreshBtnY + 8, 12, '#ffffff', 'center');
+
+    // ==================== 基础属性区域 ====================
+    const baseAttrY = rootY + rootHeight + 15;
+    const baseAttrHeight = 120;
+    drawRoundRect(contentX, baseAttrY, contentWidth, baseAttrHeight, 8, '#4a4a4a');
+    
+    drawText('基础属性', contentX + 15, baseAttrY + 12, 14, '#d4a853');
+    
+    // 两行显示基础属性
+    const baseAttrs = [
+        { name: '根骨', value: baseAttributes.constitution || 0, desc: '影响生命值' },
+        { name: '身法', value: baseAttributes.agility || 0, desc: '影响速度' },
+        { name: '机缘', value: baseAttributes.luck || 0, desc: '影响暴击' },
+        { name: '悟性', value: baseAttributes.wisdom || 0, desc: '影响修炼效率' }
+    ];
+    
+    const attrItemWidth = contentWidth / 2;
+    baseAttrs.forEach((attr, index) => {
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+        const x = contentX + col * attrItemWidth + 15;
+        const y = baseAttrY + 40 + row * 35;
+        
+        drawText(attr.name + ': ' + attr.value, x, y, 13, '#ffffff');
+        drawText(attr.desc, x + 60, y, 10, '#999999');
+    });
+    
+    // 自由点数
+    const freePoints = baseAttributes.freePoints || 0;
+    if (freePoints > 0) {
+        drawText('自由点数: ' + freePoints, contentX + contentWidth - 100, baseAttrY + 12, 12, '#4caf50');
+    }
+
+    // ==================== 战斗属性区域 ====================
+    const combatY = baseAttrY + baseAttrHeight + 15;
+    const combatHeight = 180;
+    drawRoundRect(contentX, combatY, contentWidth, combatHeight, 8, '#4a4a4a');
+    
+    drawText('战斗属性', contentX + 15, combatY + 12, 14, '#d4a853');
+    
+    // 战斗属性列表
+    const combatAttrs = [
+        { name: '生命值', value: Math.floor(attributes.health || 0), color: '#ff6b6b' },
+        { name: '法力值', value: Math.floor(attributes.mana || 0), color: '#4dabf7' },
+        { name: '灵气', value: Math.floor(attributes.spirit || 0), color: '#69db7c' },
+        { name: '攻击力', value: Math.floor(attributes.attack || 0), color: '#ffa94d' },
+        { name: '防御力', value: Math.floor(attributes.defense || 0), color: '#74c0fc' },
+        { name: '速度', value: (attributes.speed || 0).toFixed(2), color: '#e599f7' },
+        { name: '闪避', value: (attributes.dodge || 0).toFixed(2) + '%', color: '#63e6be' },
+        { name: '暴击率', value: (attributes.criticalRate || 0).toFixed(2) + '%', color: '#ff8787' }
+    ];
+    
+    combatAttrs.forEach((attr, index) => {
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+        const x = contentX + col * attrItemWidth + 15;
+        const y = combatY + 40 + row * 32;
+        
+        drawText(attr.name + ': ', x, y, 12, '#cccccc');
+        drawText(attr.value.toString(), x + 50, y, 13, attr.color);
+    });
+}
+
+/**
+ * 刷新跟脚
+ * @returns {Promise<Object>} 刷新结果
+ * 修复标识: FIX_REFRESH_ROOT_20260327
+ */
+function refreshRoot() {
+    return new Promise((resolve, reject) => {
+        if (!gameEngine || !gameEngine.state || !gameEngine.state.data || !gameEngine.state.data.player || !gameEngine.state.data.player.id) {
+            const error = new Error('玩家信息不存在');
+            console.error('刷新跟脚失败:', error);
+            reject(error);
+            return;
+        }
+        
+        const playerId = gameEngine.state.data.player.id;
+        const url = CONFIG.SERVER_URL + '/api/player/attributes/refresh-root';
+        
+        console.log('刷新跟脚请求:', url, { playerId });
+        
+        wx.showLoading({ title: '刷新跟脚中...' });
+        
+        wx.request({
+            url: url,
+            method: 'POST',
+            data: {
+                playerId: playerId
+            },
+            header: {
+                'Content-Type': 'application/json'
+            },
+            timeout: CONFIG.API_TIMEOUT,
+            success: function(res) {
+                wx.hideLoading();
+                console.log('刷新跟脚响应:', res);
+                
+                if (res.data && res.data.status === 'success') {
+                    const data = res.data.data;
+                    const newRoot = data.root;
+                    const currentRoot = gameEngine.state.data.player.root || {};
+                    
+                    // 比较跟脚等级（bonus）
+                    const currentBonus = currentRoot.bonus || 0;
+                    const newBonus = newRoot.bonus || 0;
+                    
+                    if (newBonus > currentBonus) {
+                        // 新跟脚等级更高，保存
+                        console.log('新跟脚等级更高，保存:', newRoot);
+                        
+                        // 保存到服务端
+                        saveRoot(playerId, newRoot).then(() => {
+                            // 更新游戏状态
+                            if (gameEngine && gameEngine.state && gameEngine.state.data) {
+                                if (!gameEngine.state.data.player) {
+                                    gameEngine.state.data.player = {};
+                                }
+                                gameEngine.state.data.player.root = newRoot;
+                                
+                                // 更新派生属性
+                                if (data.derived) {
+                                    gameEngine.state.data.player.attributes = data.derived;
+                                }
+                            }
+                            
+                            showPopup({
+                                title: '刷新结果',
+                                content: '跟脚刷新成功！\n\n新跟脚: ' + newRoot.name + '\n修炼加成: ' + (newBonus * 100).toFixed(0) + '%',
+                                buttons: [
+                                    {
+                                        text: '确定',
+                                        value: 'ok',
+                                        isPrimary: true
+                                    }
+                                ],
+                                callback: function() {
+                                    resolve(data);
+                                }
+                            });
+                        }).catch((error) => {
+                            console.error('保存跟脚失败:', error);
+                            showPopup({
+                                title: '错误',
+                                content: '保存跟脚失败',
+                                buttons: [
+                                    {
+                                        text: '确定',
+                                        value: 'ok',
+                                        isPrimary: true
+                                    }
+                                ],
+                                callback: function() {
+                                    reject(error);
+                                }
+                            });
+                        });
+                    } else {
+                        // 新跟脚等级不高于当前，不保存
+                        console.log('新跟脚等级不高于当前，不保存');
+                        showPopup({
+                            title: '刷新结果',
+                            content: '新跟脚: ' + newRoot.name + ' (加成: ' + (newBonus * 100).toFixed(0) + '%)\n' +
+                                     '当前跟脚: ' + (currentRoot.name || '未知') + ' (加成: ' + (currentBonus * 100).toFixed(0) + '%)\n\n' +
+                                     '新跟脚等级不高于当前，是否保留新跟脚？',
+                            buttons: [
+                                {
+                                    text: '放弃',
+                                    value: 'cancel'
+                                },
+                                {
+                                    text: '保留',
+                                    value: 'confirm',
+                                    isPrimary: true
+                                }
+                            ],
+                            callback: function(value) {
+                                if (value === 'confirm') {
+                                    // 用户选择保留新跟脚
+                                    console.log('用户选择保留新跟脚');
+                                    
+                                    // 保存到服务端
+                                    saveRoot(playerId, newRoot).then(() => {
+                                        // 更新游戏状态
+                                        if (gameEngine && gameEngine.state && gameEngine.state.data) {
+                                            if (!gameEngine.state.data.player) {
+                                                gameEngine.state.data.player = {};
+                                            }
+                                            gameEngine.state.data.player.root = newRoot;
+                                            
+                                            // 更新派生属性
+                                            if (data.derived) {
+                                                gameEngine.state.data.player.attributes = data.derived;
+                                            }
+                                        }
+                                        
+                                        resolve(data);
+                                    }).catch((error) => {
+                                        console.error('保存跟脚失败:', error);
+                                        showPopup({
+                                            title: '错误',
+                                            content: '保存跟脚失败',
+                                            buttons: [
+                                                {
+                                                    text: '确定',
+                                                    value: 'ok',
+                                                    isPrimary: true
+                                                }
+                                            ],
+                                            callback: function() {
+                                                reject(error);
+                                            }
+                                        });
+                                    });
+                                } else {
+                                    // 用户选择放弃新跟脚
+                                    console.log('用户选择放弃新跟脚');
+                                    resolve(null);
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    let errorMessage = '刷新跟脚失败';
+                    if (res.data && res.data.message) {
+                        errorMessage = res.data.message;
+                    }
+                    showPopup({
+                        title: '错误',
+                        content: errorMessage,
+                        buttons: [
+                            {
+                                text: '确定',
+                                value: 'ok',
+                                isPrimary: true
+                            }
+                        ],
+                        callback: function() {
+                            reject(new Error(errorMessage));
+                        }
+                    });
+                }
+            },
+            fail: function(err) {
+                wx.hideLoading();
+                console.error('刷新跟脚请求失败:', err);
+                showPopup({
+                    title: '错误',
+                    content: '网络请求失败',
+                    buttons: [
+                        {
+                            text: '确定',
+                            value: 'ok',
+                            isPrimary: true
+                        }
+                    ],
+                    callback: function() {
+                        reject(new Error('网络请求失败'));
+                    }
+                });
+            }
+        });
+    });
+}
+
+/**
+ * 保存跟脚到服务端
+ * @param {string} playerId - 玩家ID
+ * @param {Object} root - 跟脚信息
+ * @returns {Promise} - 保存结果
+ * 修复标识: FIX_SAVE_ROOT_20260327
+ */
+function saveRoot(playerId, root) {
+    return new Promise((resolve, reject) => {
+        if (!playerId || !root) {
+            const error = new Error('参数错误');
+            console.error('保存跟脚失败:', error);
+            reject(error);
+            return;
+        }
+        
+        // 使用保存玩家游戏状态接口
+        const url = CONFIG.SERVER_URL + `/api/player/${playerId}`;
+        
+        console.log('保存跟脚请求:', url, { root });
+        
+        wx.request({
+            url: url,
+            method: 'POST',
+            data: {
+                gameState: {
+                    root: root
+                },
+                lastSaveTime: new Date().toISOString()
+            },
+            header: {
+                'Content-Type': 'application/json'
+            },
+            timeout: CONFIG.API_TIMEOUT,
+            success: function(res) {
+                console.log('保存跟脚响应:', res);
+                
+                if (res.data && res.data.status === 'success') {
+                    resolve(res.data);
+                } else {
+                    let errorMessage = '保存跟脚失败';
+                    if (res.data && res.data.message) {
+                        errorMessage = res.data.message;
+                    }
+                    reject(new Error(errorMessage));
+                }
+            },
+            fail: function(err) {
+                console.error('保存跟脚请求失败:', err);
+                reject(new Error('网络请求失败'));
+            }
+        });
+    });
+}
+
+/**
+ * 处理属性页面的触摸事件
+ * @param {number} x - 触摸X坐标
+ * @param {number} y - 触摸Y坐标
+ * @returns {boolean} - 是否处理了事件
+ * 修复标识: FIX_PLAYER_PAGE_20260327
+ * 修复标识: FIX_REFRESH_ROOT_20260327
+ */
+function handleAttributesPageTouch(x, y) {
+    const safeAreaTop = 50;
+    
+    // 检查返回按钮
+    if (x >= 15 && x <= 75 && y >= safeAreaTop + 10 && y <= safeAreaTop + 40) {
+        goBackToHome();
+        return true;
+    }
+    
+    // 检查刷新跟脚按钮
+    const contentY = safeAreaTop + 50 + 20;
+    const infoHeight = 100;
+    const rootY = contentY + infoHeight + 15;
+    const contentX = 15;
+    const contentWidth = screenWidth - 30;
+    const refreshBtnWidth = 80;
+    const refreshBtnHeight = 30;
+    const refreshBtnX = contentX + contentWidth - refreshBtnWidth - 15;
+    const refreshBtnY = rootY + 25;
+    
+    if (x >= refreshBtnX && x <= refreshBtnX + refreshBtnWidth && 
+        y >= refreshBtnY && y <= refreshBtnY + refreshBtnHeight) {
+        console.log('点击了刷新跟脚按钮');
+        refreshRoot();
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * 显示用户跟脚与属性信息对话框（已废弃，使用页面形式）
+ * 修复标识: FIX_PLAYER_INFO_20260327
+ * 修复标识: FIX_SERVER_DATA_20260327
+ * 修复标识: FIX_PLAYER_PAGE_20260327
+ */
+function showPlayerInfoDialog() {
+    // 改用页面形式显示
+    showPlayerAttributesPage();
 }
 
 /**
@@ -1055,9 +1564,10 @@ function loadPlayerInfo() {
         return;
     }
 
-    var url = CONFIG.SERVER_URL + '/api/player/info?id=' + playerId;
+    // 使用character-info接口获取完整角色信息
+    var url = CONFIG.SERVER_URL + '/api/player/character-info?id=' + playerId;
 
-    console.log('从后端请求玩家信息:', url);
+    console.log('从后端请求完整角色信息:', url);
 
     wx.request({
         url: url,
@@ -1067,17 +1577,81 @@ function loadPlayerInfo() {
             console.log('后端响应:', res);
 
             if (res.statusCode === 200 && res.data && res.data.status === 'success' && res.data.data) {
-                var info = res.data.data;
+                var data = res.data.data;
                 
-                // 更新全局玩家信息缓存
-                playerInfo.id = info.id || playerInfo.id;
-                playerInfo.name = info.name || playerInfo.name;
-                playerInfo.avatar = info.avatar || playerInfo.avatar;
+                // 更新玩家基础信息 - 使用更安全的方式
+                if (data.player) {
+                    playerInfo.id = data.player.id || playerInfo.id;
+                    playerInfo.name = data.player.name || playerInfo.name;
+                    playerInfo.avatar = data.player.avatar || playerInfo.avatar;
+                    
+                    // 确保player对象存在
+                    if (!gameEngine.state.data.player) {
+                        gameEngine.state.data.player = {};
+                    }
+                    // 更新游戏状态中的玩家信息
+                    gameEngine.state.data.player.id = data.player.id || gameEngine.state.data.player.id;
+                    gameEngine.state.data.player.name = data.player.name || gameEngine.state.data.player.name;
+                    gameEngine.state.data.player.avatar = data.player.avatar || gameEngine.state.data.player.avatar;
+                }
+                
+                // 更新属性信息 - 使用更安全的方式
+                if (data.attributes) {
+                    if (!gameEngine.state.data.player) {
+                        gameEngine.state.data.player = {};
+                    }
+                    gameEngine.state.data.player.attributes = data.attributes.derived || gameEngine.state.data.player.attributes || {};
+                    gameEngine.state.data.player.baseAttributes = data.attributes.base || gameEngine.state.data.player.baseAttributes || {};
+                    gameEngine.state.data.player.root = data.attributes.root || gameEngine.state.data.player.root || {};
+                }
+                
+                // 更新境界信息 - 使用更安全的方式
+                if (data.realm) {
+                    if (!gameEngine.state.data.realm) {
+                        gameEngine.state.data.realm = {};
+                    }
+                    gameEngine.state.data.realm.name = data.realm.realmName || gameEngine.state.data.realm.name;
+                    gameEngine.state.data.realm.currentRealm = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentRealm;
+                    gameEngine.state.data.realm.currentLayer = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentLayer;
+                    gameEngine.state.data.realm.exp = data.realm.cultivationProgress !== undefined ? data.realm.cultivationProgress : gameEngine.state.data.realm.exp;
+                }
+                
+                // 更新修炼信息 - 使用更安全的方式
+                if (data.cultivation) {
+                    if (!gameEngine.state.data.training) {
+                        gameEngine.state.data.training = {};
+                    }
+                    if (!gameEngine.state.data.training.cultivation) {
+                        gameEngine.state.data.training.cultivation = {};
+                    }
+                    gameEngine.state.data.training.cultivation.active = data.cultivation.isCultivating !== undefined ? data.cultivation.isCultivating : gameEngine.state.data.training.cultivation.active;
+                    gameEngine.state.data.training.cultivation.realTimeEfficiency = data.cultivation.realTimeEfficiency !== undefined ? data.cultivation.realTimeEfficiency : gameEngine.state.data.training.cultivation.realTimeEfficiency;
+                }
+                
+                // 更新装备信息 - 使用更安全的方式
+                if (data.equipment && Array.isArray(data.equipment)) {
+                    // 确保equipment对象存在
+                    if (!gameEngine.state.data.equipment) {
+                        gameEngine.state.data.equipment = { equipped: {}, inventory: [] };
+                    }
+                    if (!gameEngine.state.data.equipment.equipped) {
+                        gameEngine.state.data.equipment.equipped = {};
+                    }
+                    
+                    // 更新装备数据
+                    data.equipment.forEach(function(item) {
+                        if (item && item.type) {
+                            gameEngine.state.data.equipment.equipped[item.type] = item;
+                        }
+                    });
+                }
 
-                console.log('成功获取并更新玩家信息:', playerInfo);
+                console.log('成功获取并更新完整角色信息:', playerInfo);
                 
-                // 强制触发界面更新
-                drawHomePage();
+                // 强制触发界面更新 - 使用requestAnimationFrame确保在下一帧绘制
+                requestAnimationFrame(function() {
+                    drawHomePage();
+                });
             } else {
                 console.warn('后端返回数据格式错误:', res);
             }
@@ -1285,11 +1859,25 @@ function initGameEngine() {
 /**
  * 处理游戏主界面的触摸事件
  * 修复标识: FIX_CULTIVATION_20260327
+ * 修复标识: FIX_PLAYER_PAGE_20260327
  */
 function handleGameTouch(e) {
     const rect = canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
+    
+    // 先处理弹窗触摸事件
+    if (handlePopupTouch(x, y)) {
+        return;
+    }
+    
+    // 根据当前页面分发触摸事件
+    if (currentPage === 'attributes') {
+        // 属性页面触摸事件
+        if (handleAttributesPageTouch(x, y)) {
+            return;
+        }
+    }
     
     if (!gameEngine || !gameEngine.state || !gameEngine.state.data) {
         return;
@@ -1297,17 +1885,36 @@ function handleGameTouch(e) {
     
     const state = gameEngine.state.data;
     
-    // 计算修炼控制按钮坐标
-    const mainY = 130; // 主内容区域Y坐标
-    const equipCharHeight = 200; // 装备和角色区域高度
-    const progressY = mainY + equipCharHeight + 10; // 修炼进度条Y坐标
-    const buttonY = progressY + 46; // 按钮Y坐标
-    const buttonWidth = (screenWidth - 30) / 2; // 按钮宽度
+    // 计算修炼控制按钮坐标（新样式）
+    const safeAreaTop = 50;
+    const headerY = safeAreaTop + 10;
+    const avatarSize = 50;
+    const resourceY = headerY + avatarSize + 15;
+    const resourceHeight = 45;
+    const mainY = resourceY + resourceHeight + 15;
+    const equipCharHeight = 280;
+    const progressY = mainY + equipCharHeight + 20;
+    const progressWidth = screenWidth - 30;
+    const buttonY = progressY + 40;
+    const buttonHeight = 40;
+    const smallBtnWidth = 70;
+    const mainBtnWidth = progressWidth - smallBtnWidth * 2 - 20;
+    
+    // 检查是否点击了加速按钮
+    if (x >= 15 && x <= 15 + smallBtnWidth && y >= buttonY && y <= buttonY + buttonHeight) {
+        console.log('点击了加速按钮');
+        wx.showToast({
+            title: '加速功能开发中',
+            icon: 'none'
+        });
+        return;
+    }
     
     // 检查是否点击了开始/停止修炼按钮
-    if (x >= 10 && x <= 10 + buttonWidth && y >= buttonY && y <= buttonY + 40) {
+    if (x >= 15 + smallBtnWidth + 10 && x <= 15 + smallBtnWidth + 10 + mainBtnWidth && 
+        y >= buttonY && y <= buttonY + buttonHeight) {
         console.log('点击了修炼按钮');
-        if (state.training.cultivation.active) {
+        if (state.training && state.training.cultivation && state.training.cultivation.active) {
             stopCultivation();
         } else {
             startCultivation();
@@ -1316,15 +1923,72 @@ function handleGameTouch(e) {
     }
     
     // 检查是否点击了突破按钮
-    if (x >= buttonWidth + 20 && x <= buttonWidth + 20 + buttonWidth && y >= buttonY && y <= buttonY + 40) {
+    if (x >= 15 + smallBtnWidth + 10 + mainBtnWidth + 10 && x <= 15 + smallBtnWidth + 10 + mainBtnWidth + 10 + smallBtnWidth && 
+        y >= buttonY && y <= buttonY + buttonHeight) {
         console.log('点击了突破按钮');
-        // 突破功能可以后续实现
         wx.showToast({
             title: '突破功能开发中',
             icon: 'none'
         });
         return;
     }
+    
+    // 检查是否点击了头像区域（新样式）
+    const avatarX = 15;
+    const avatarY = headerY;
+    if (x >= avatarX && x <= avatarX + avatarSize && y >= avatarY && y <= avatarY + avatarSize) {
+        console.log('点击了头像');
+        showPlayerInfoDialog();
+        return;
+    }
+    
+    // 检查是否点击了底部功能按钮
+    const featureY = buttonY + buttonHeight + 20;
+    const featureBtnWidth = (screenWidth - 50) / 3;
+    const featureBtnHeight = 45;
+    
+    // 第一行按钮
+    const row1Features = [
+        { name: '跟脚', key: 'root' },
+        { name: '功法', key: 'skills' },
+        { name: '炼体', key: 'body' }
+    ];
+    
+    row1Features.forEach((feature, index) => {
+        const btnX = 15 + index * (featureBtnWidth + 10);
+        if (x >= btnX && x <= btnX + featureBtnWidth && 
+            y >= featureY && y <= featureY + featureBtnHeight) {
+            console.log('点击了功能按钮:', feature.name);
+            if (feature.key === 'root') {
+                showPlayerAttributesPage();
+            } else {
+                wx.showToast({
+                    title: feature.name + '功能开发中',
+                    icon: 'none'
+                });
+            }
+        }
+    });
+    
+    // 第二行按钮
+    const row2Features = [
+        { name: '丹炉', key: 'alchemy' },
+        { name: '灵宠', key: 'pet' },
+        { name: '灵田', key: 'field' }
+    ];
+    
+    row2Features.forEach((feature, index) => {
+        const btnX = 15 + index * (featureBtnWidth + 10);
+        const btnY = featureY + featureBtnHeight + 10;
+        if (x >= btnX && x <= btnX + featureBtnWidth && 
+            y >= btnY && y <= btnY + featureBtnHeight) {
+            console.log('点击了功能按钮:', feature.name);
+            wx.showToast({
+                title: feature.name + '功能开发中',
+                icon: 'none'
+            });
+        }
+    });
 }
 
 // 开始游戏
@@ -1363,10 +2027,22 @@ function gameLoop() {
 
 /**
  * 绘制游戏界面
+ * 修复标识: FIX_PLAYER_PAGE_20260327
  */
 function drawGameInterface() {
-    // 绘制网页版风格的主页
-    drawHomePage();
+    // 根据当前页面绘制不同内容
+    switch (currentPage) {
+        case 'attributes':
+            drawAttributesPage();
+            break;
+        case 'home':
+        default:
+            drawHomePage();
+            break;
+    }
+    
+    // 绘制弹窗
+    drawPopup();
 }
 
 // ==================== 绘制辅助函数 ====================
@@ -1429,7 +2105,8 @@ function drawProgressBar(x, y, width, height, progress, fillColor = '#4caf50', b
 // ==================== 主页绘制 ====================
 
 /**
- * 绘制主页（网页版风格）
+ * 绘制主页（新样式）
+ * 修复标识: FIX_UI_STYLE_20260327
  */
 function drawHomePage() {
     if (!gameEngine || !gameEngine.state || !gameEngine.state.data) {
@@ -1438,217 +2115,273 @@ function drawHomePage() {
     }
 
     const state = gameEngine.state.data;
-    const equipment = state.equipment;
-    const resources = state.resources;
-    const player = state.player;
-    const realm = state.realm;
+    const equipment = state.equipment || { equipped: {} };
+    const resources = state.resources || { spiritStone: 0, immortalStone: 0 };
+    const player = state.player || {};
+    const realm = state.realm || { currentRealm: 0, currentLayer: 1, exp: 0 };
 
     // 获取境界配置
     const GameConfigClass = typeof global !== 'undefined' && global.GameConfig ? global.GameConfig : null;
-    let realmConfig = { name: '炼气期', baseExp: 100, expMultiplier: 1.2 };
+    let realmConfig = { name: '凡人境', baseExp: 100, expMultiplier: 1.2 };
     if (GameConfigClass && GameConfigClass.REALM && GameConfigClass.REALM.realms) {
         realmConfig = GameConfigClass.REALM.realms[realm.currentRealm] || realmConfig;
     }
 
     // 计算修炼进度
     const requiredExp = Math.floor(realmConfig.baseExp * Math.pow(realmConfig.expMultiplier, realm.currentLayer - 1));
-    let progress = realm.exp / requiredExp;
     
-    // 如果正在修炼，根据修炼时间和效率计算实时进度
-    if (state.training.cultivation.active && state.training.cultivation.startTime && state.training.cultivation.realTimeEfficiency) {
+    // 计算当前实际修为值（包括修炼中获得的额外修为）
+    let currentExp = realm.exp;
+    if (state.training && state.training.cultivation && state.training.cultivation.active && 
+        state.training.cultivation.startTime && state.training.cultivation.realTimeEfficiency) {
         const startTime = new Date(state.training.cultivation.startTime).getTime();
         const currentTime = Date.now();
         const elapsedSeconds = (currentTime - startTime) / 1000;
         const efficiency = state.training.cultivation.realTimeEfficiency;
-        const additionalExp = elapsedSeconds * efficiency;
-        const totalExp = realm.exp + additionalExp;
-        progress = totalExp / requiredExp;
-        // 确保进度不超过100%
-        if (progress > 1) progress = 1;
+        const updateInterval = 20;
+        const completedIntervals = Math.floor(elapsedSeconds / updateInterval);
+        const additionalExp = completedIntervals * updateInterval * efficiency;
+        currentExp = realm.exp + additionalExp;
     }
+    
+    let progress = currentExp / requiredExp;
+    if (progress > 1) progress = 1;
 
     // ==================== 顶部用户信息 ====================
-    // 微信小游戏刘海屏适配,顶部留出安全区域
-    const safeAreaTop = 50; // 刘海屏安全区域高度
+    const safeAreaTop = 50;
     const headerY = safeAreaTop + 10;
+    const avatarSize = 50;
+    const avatarX = 15;
 
-    // 使用从后端获取的玩家信息，如果没有则使用本地数据
+    // 使用从后端获取的玩家信息
     const displayPlayer = {
-        name: playerInfo.name || (player && player.name) || '正经修仙者',
-        id: playerInfo.id || (player && player.id) || '000000',
-        avatar: playerInfo.avatar || null
+        name: playerInfo.name || player.name || '修仙者',
+        id: playerInfo.id || player.id || '000000',
+        avatar: playerInfo.avatar || player.avatar || null
     };
 
-    // 头像区域（移除背景）
+    // 绘制头像背景圆形
+    ctx.beginPath();
+    ctx.arc(avatarX + avatarSize/2, headerY + avatarSize/2, avatarSize/2, 0, Math.PI * 2);
+    ctx.fillStyle = '#5a5a5a';
+    ctx.fill();
+
+    // 头像区域
     if (displayPlayer.avatar) {
-        // 如果有头像URL，显示头像
         try {
             const avatarImage = wx.createImage();
             avatarImage.src = displayPlayer.avatar;
-            ctx.drawImage(avatarImage, 20, headerY, 40, 40);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(avatarX + avatarSize/2, headerY + avatarSize/2, avatarSize/2 - 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(avatarImage, avatarX, headerY, avatarSize, avatarSize);
+            ctx.restore();
         } catch (e) {
-            drawText('头像', 40, headerY + 20, 12, '#999999', 'center');
+            drawText('头像', avatarX + avatarSize/2, headerY + avatarSize/2 - 6, 14, '#999999', 'center');
         }
     } else {
-        drawText('头像', 40, headerY + 20, 12, '#999999', 'center');
+        drawText('头像', avatarX + avatarSize/2, headerY + avatarSize/2 - 6, 14, '#999999', 'center');
     }
 
-    // 用户名
-    drawText(displayPlayer.name, 70, headerY + 15, 16, '#ffffff');
+    // 用户名和ID
+    drawText(displayPlayer.name, avatarX + avatarSize + 10, headerY + 5, 16, '#ffffff');
+    drawText('ID : ' + displayPlayer.id, avatarX + avatarSize + 10, headerY + 28, 12, '#999999');
+    
+    // VIP标识
+    drawRoundRect(avatarX + avatarSize + 10 + 80, headerY + 26, 40, 16, 3, '#666666');
+    drawText('VIP 0', avatarX + avatarSize + 10 + 100, headerY + 28, 10, '#d4a853', 'center');
 
-    // 用户ID - 直接显示服务器返回的数字ID
-    drawText('ID: ' + displayPlayer.id, 70, headerY + 35, 12, '#999999');
+    // ==================== 资源栏（新样式）====================
+    const resourceY = headerY + avatarSize + 15;
+    const resourceHeight = 45;
+    const resourceItemWidth = (screenWidth - 30) / 3;
 
-    // ==================== 资源栏 ====================
-    const resourceHeight = 40;
-    const resourceY = headerY + 60; // 在用户信息下方
-    const resourceWidth = (screenWidth - 40) / 3;
+    // 资源栏背景
+    drawRoundRect(10, resourceY, screenWidth - 20, resourceHeight, 8, '#4a4a4a');
 
     // 体力
-    drawRoundRect(10, resourceY, resourceWidth - 8, resourceHeight, 4, '#4a4a4a');
-    drawText('体力', 18, resourceY + 8, 12, '#999999');
-    drawText(state.training.cave.spiritPoints.toString(), 18, resourceY + 24, 14, '#ffffff');
+    drawText('体力', 25, resourceY + 8, 12, '#999999');
+    drawText((state.training && state.training.cave ? state.training.cave.spiritPoints : 0).toString(), 25, resourceY + 24, 16, '#ffffff');
+    // 加号按钮
+    drawRoundRect(25 + 35, resourceY + 22, 18, 18, 9, '#666666');
+    drawText('+', 25 + 35 + 9, resourceY + 24, 14, '#d4a853', 'center');
 
     // 仙晶
-    drawRoundRect(resourceWidth + 2, resourceY, resourceWidth - 8, resourceHeight, 4, '#4a4a4a');
-    drawText('仙晶', resourceWidth + 10, resourceY + 8, 12, '#999999');
-    drawText(formatNumber(resources.immortalStone), resourceWidth + 10, resourceY + 24, 14, '#d4a853');
+    drawText('仙晶', 25 + resourceItemWidth, resourceY + 8, 12, '#999999');
+    drawText(formatNumber(resources.immortalStone || 0), 25 + resourceItemWidth, resourceY + 24, 16, '#d4a853');
+    drawRoundRect(25 + resourceItemWidth + 50, resourceY + 22, 18, 18, 9, '#666666');
+    drawText('+', 25 + resourceItemWidth + 50 + 9, resourceY + 24, 14, '#d4a853', 'center');
 
     // 灵石
-    drawRoundRect(resourceWidth * 2 - 6, resourceY, resourceWidth - 8, resourceHeight, 4, '#4a4a4a');
-    drawText('灵石', resourceWidth * 2 + 2, resourceY + 8, 12, '#999999');
-    drawText(formatNumber(resources.spiritStone), resourceWidth * 2 + 2, resourceY + 24, 14, '#ffd700');
+    drawText('灵石', 25 + resourceItemWidth * 2, resourceY + 8, 12, '#999999');
+    drawText(formatNumber(resources.spiritStone || 0), 25 + resourceItemWidth * 2, resourceY + 24, 16, '#ffd700');
+    drawRoundRect(25 + resourceItemWidth * 2 + 50, resourceY + 22, 18, 18, 9, '#666666');
+    drawText('+', 25 + resourceItemWidth * 2 + 50 + 9, resourceY + 24, 14, '#d4a853', 'center');
 
-    // ==================== 主内容区域 ====================
-    const mainY = resourceY + resourceHeight + 10;
-
-    // 装备和角色区域高度
-    const equipCharHeight = 200;
+    // ==================== 主内容区域（装备和角色）====================
+    const mainY = resourceY + resourceHeight + 15;
+    const equipCharHeight = 280;
     const equipWidth = 80;
-    const characterWidth = 120;
-    const equipX = 10;
+    const characterWidth = screenWidth - equipWidth * 2 - 40;
+    const equipX = 15;
 
-    // 绘制左侧装备栏
-    drawRoundRect(equipX, mainY, equipWidth, equipCharHeight, 6, '#4a4a4a');
-    drawText('装备', equipX + equipWidth / 2, mainY + 8, 12, '#999999', 'center');
-
-    // 装备槽
-    const equipSlots = [
+    // 左侧装备栏
+    const leftEquipSlots = [
         { slot: 'weapon', name: '武器' },
         { slot: 'armor', name: '衣服' },
         { slot: 'belt', name: '腰带' },
         { slot: 'boots', name: '鞋子' }
     ];
 
-    equipSlots.forEach((equip, index) => {
-        const slotY = mainY + 30 + index * 40;
-        drawRoundRect(equipX + 8, slotY, equipWidth - 16, 36, 4, '#5a5a5a');
-        drawText(equip.name, equipX + 10, slotY + 4, 10, '#cccccc');
-
+    leftEquipSlots.forEach((equip, index) => {
+        const slotY = mainY + index * 65;
+        drawRoundRect(equipX, slotY, equipWidth, 55, 6, '#4a4a4a');
+        drawText(equip.name, equipX + equipWidth/2, slotY + 8, 11, '#cccccc', 'center');
+        
         const equippedItem = equipment.equipped[equip.slot];
         if (equippedItem) {
-            drawText(equippedItem.name, equipX + 10, slotY + 18, 10, '#ffffff');
+            drawText(equippedItem.name, equipX + equipWidth/2, slotY + 28, 10, '#ffffff', 'center');
         } else {
-            drawText('+', equipX + equipWidth / 2, slotY + 18, 12, '#999999', 'center');
+            drawText('+', equipX + equipWidth/2, slotY + 28, 20, '#999999', 'center');
         }
     });
 
-    // 绘制中间角色区域
+    // 中间角色区域
     const characterX = equipX + equipWidth + 10;
-    drawRoundRect(characterX, mainY, characterWidth, equipCharHeight, 6, '#4a4a4a');
+    
+    // 境界显示（顶部居中）
+    const realmText = (realmConfig.name || '凡人境') + ' · ' + (realm.currentLayer || 1) + '层';
+    drawText(realmText, characterX + characterWidth/2, mainY - 5, 16, '#d4a853', 'center');
 
-    // 境界显示
-    drawText(realmConfig.name, characterX + characterWidth / 2, mainY + 10, 14, '#d4a853', 'center');
-    drawText(state.realm.currentLayer + '层', characterX + characterWidth / 2, mainY + 28, 12, '#999999', 'center');
+    // 角色形象 - 使用role.png并添加呼吸效果
+    const characterCenterX = characterX + characterWidth / 2;
+    const characterCenterY = mainY + equipCharHeight / 2 + 10;
+    
+    const time = Date.now() / 1000;
+    const scale = 0.85 + Math.sin(time * 1.5) * 0.15;
+    const alpha = 0.85 + Math.sin(time * 1.5) * 0.15;
+    
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(characterCenterX, characterCenterY);
+    ctx.scale(scale, scale);
+    
+    try {
+        const roleImage = wx.createImage();
+        roleImage.src = 'image/role.png';
+        const roleSize = 140;
+        ctx.drawImage(roleImage, -roleSize/2, -roleSize/2, roleSize, roleSize);
+    } catch (e) {
+        ctx.fillStyle = '#5a5a5a';
+        ctx.beginPath();
+        ctx.arc(0, 0, 60, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#999999';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('角色形象', 0, 0);
+    }
+    
+    ctx.restore();
 
-    // 角色头像区域
-    drawRoundRect(characterX + 10, mainY + 50, characterWidth - 20, 130, 4, '#5a5a5a');
-    drawText('正经修仙者', characterX + characterWidth / 2, mainY + 105, 12, '#999999', 'center');
-
-    // 绘制右侧装备栏
+    // 右侧装备栏
     const rightEquipX = characterX + characterWidth + 10;
-    drawRoundRect(rightEquipX, mainY, equipWidth, equipCharHeight, 6, '#4a4a4a');
-    drawText('饰品', rightEquipX + equipWidth / 2, mainY + 8, 12, '#999999', 'center');
-
-    const accessorySlots = [
+    const rightEquipSlots = [
         { slot: 'necklace', name: '项链' },
         { slot: 'ring', name: '戒指' },
         { slot: 'jade', name: '玉佩' },
         { slot: 'talisman', name: '法宝' }
     ];
 
-    accessorySlots.forEach((equip, index) => {
-        const slotY = mainY + 30 + index * 40;
-        drawRoundRect(rightEquipX + 8, slotY, equipWidth - 16, 36, 4, '#5a5a5a');
-        drawText(equip.name, rightEquipX + 10, slotY + 4, 10, '#cccccc');
-
+    rightEquipSlots.forEach((equip, index) => {
+        const slotY = mainY + index * 65;
+        drawRoundRect(rightEquipX, slotY, equipWidth, 55, 6, '#4a4a4a');
+        drawText(equip.name, rightEquipX + equipWidth/2, slotY + 8, 11, '#cccccc', 'center');
+        
         const equippedItem = equipment.equipped[equip.slot];
         if (equippedItem) {
-            drawText(equippedItem.name, rightEquipX + 10, slotY + 18, 10, '#ffffff');
+            drawText(equippedItem.name, rightEquipX + equipWidth/2, slotY + 28, 10, '#ffffff', 'center');
         } else {
-            drawText('+', rightEquipX + equipWidth / 2, slotY + 18, 12, '#999999', 'center');
+            drawText('+', rightEquipX + equipWidth/2, slotY + 28, 20, '#999999', 'center');
         }
     });
 
     // ==================== 修炼进度条 ====================
-    const progressY = mainY + equipCharHeight + 10;
-    const progressWidth = screenWidth - 20;
-    drawRoundRect(10, progressY, progressWidth, 36, 4, '#4a4a4a');
+    const progressY = mainY + equipCharHeight + 20;
+    const progressWidth = screenWidth - 30;
 
-    drawText('修炼进度', 18, progressY + 8, 12, '#999999');
-    drawText(
-        state.training.cultivation.active ? '修炼中...' : '修炼停止',
-        18,
-        progressY + 20,
-        10,
-        state.training.cultivation.active ? '#4caf50' : '#ff5722'
-    );
-
-    const progressText = `${formatNumber(realm.exp)}/${formatNumber(requiredExp)} (${(progress * 100).toFixed(1)}%)`;
-    drawText(progressText, screenWidth - 10, progressY + 20, 10, '#ffffff', 'right');
-
-    // 进度条
-    drawProgressBar(18, progressY + 4, progressWidth - 16, 4, progress, '#4caf50', '#5a5a5a');
+    // 进度条背景
+    drawRoundRect(15, progressY, progressWidth, 30, 4, '#3a3a3a');
+    
+    // 进度条填充
+    const fillWidth = progressWidth * progress;
+    if (fillWidth > 0) {
+        drawRoundRect(15, progressY, fillWidth, 30, 4, '#4caf50');
+    }
+    
+    // 进度文字
+    const progressStatusText = state.training && state.training.cultivation && state.training.cultivation.active ? '修炼中...' : '修炼停止';
+    drawText(progressStatusText, 25, progressY + 8, 11, '#ffffff');
+    const progressValueText = `${Math.floor(currentExp)}/${requiredExp} (${(progress * 100).toFixed(2)}%)`;
+    drawText(progressValueText, screenWidth - 20, progressY + 8, 11, '#ffffff', 'right');
 
     // ==================== 修炼控制按钮 ====================
-    const buttonY = progressY + 46;
-    const buttonWidth = (progressWidth - 10) / 2;
+    const buttonY = progressY + 40;
+    const buttonHeight = 40;
+    const smallBtnWidth = 70;
+    const mainBtnWidth = progressWidth - smallBtnWidth * 2 - 20;
 
-    let speedBtnText;
-    if (state.training.cultivation.active) {
-        // 修炼中显示修炼效率
+    // 加速按钮
+    drawRoundRect(15, buttonY, smallBtnWidth, buttonHeight, 20, '#5a5a5a');
+    drawText('加速', 15 + smallBtnWidth/2, buttonY + 12, 13, '#ffffff', 'center');
+
+    // 开始/停止修炼按钮
+    let mainBtnText = '开始修炼';
+    let mainBtnColor = '#d4a853';
+    if (state.training && state.training.cultivation && state.training.cultivation.active) {
         const efficiency = state.training.cultivation.realTimeEfficiency || 0;
-        speedBtnText = `效率: ${efficiency}/秒`;
-    } else {
-        // 未修炼时显示开始修炼
-        speedBtnText = '开始修炼';
+        mainBtnText = `效率: ${Math.floor(efficiency * 30)}/30秒`;
+        mainBtnColor = '#5a5a5a';
     }
-    drawButton(10, buttonY, buttonWidth, 40, speedBtnText, state.training.cultivation.active ? '#4a4a4a' : '#d4a853');
-    drawButton(buttonWidth + 10, buttonY, buttonWidth, 40, '突破', '#4a4a4a');
+    drawRoundRect(15 + smallBtnWidth + 10, buttonY, mainBtnWidth, buttonHeight, 4, mainBtnColor);
+    drawText(mainBtnText, 15 + smallBtnWidth + 10 + mainBtnWidth/2, buttonY + 12, 13, '#ffffff', 'center');
+
+    // 突破按钮
+    drawRoundRect(15 + smallBtnWidth + 10 + mainBtnWidth + 10, buttonY, smallBtnWidth, buttonHeight, 20, '#5a5a5a');
+    drawText('突破', 15 + smallBtnWidth + 10 + mainBtnWidth + 10 + smallBtnWidth/2, buttonY + 12, 13, '#ffffff', 'center');
 
     // ==================== 底部功能按钮 ====================
-    const featureY = buttonY + 50;
-    const features = [
-        { icon: '📜', name: '剧情' },
-        { icon: '🎒', name: '背包' },
-        { icon: '📖', name: '功法' },
-        { icon: '🗺️', name: '历练' },
-        { icon: '⚗️', name: '丹炉' },
-        { icon: '🐉', name: '灵宠' },
-        { icon: '🌾', name: '灵田' },
-        { icon: '💪', name: '炼体' }
+    const featureY = buttonY + buttonHeight + 20;
+    const featureBtnWidth = (screenWidth - 50) / 3;
+    const featureBtnHeight = 45;
+
+    // 第一行
+    const row1Features = [
+        { name: '跟脚', key: 'root' },
+        { name: '功法', key: 'skills' },
+        { name: '炼体', key: 'body' }
     ];
 
-    const featureWidth = (screenWidth - 20) / 4;
-    features.forEach((feature, index) => {
-        const row = Math.floor(index / 4);
-        const col = index % 4;
-        const featureX = 10 + col * (featureWidth + 2);
-        const featureRowY = featureY + row * (featureWidth + 2);
+    row1Features.forEach((feature, index) => {
+        const x = 15 + index * (featureBtnWidth + 10);
+        drawRoundRect(x, featureY, featureBtnWidth, featureBtnHeight, 6, '#4a4a4a');
+        drawText(feature.name, x + featureBtnWidth/2, featureY + 14, 14, '#ffffff', 'center');
+    });
 
-        drawRoundRect(featureX, featureRowY, featureWidth, featureWidth, 6, '#4a4a4a');
-        drawText(feature.icon, featureX + featureWidth / 2, featureRowY + 8, 24, '#ffffff', 'center');
-        drawText(feature.name, featureX + featureWidth / 2, featureRowY + 38, 10, '#999999', 'center');
+    // 第二行
+    const row2Features = [
+        { name: '丹炉', key: 'alchemy' },
+        { name: '灵宠', key: 'pet' },
+        { name: '灵田', key: 'field' }
+    ];
+
+    row2Features.forEach((feature, index) => {
+        const x = 15 + index * (featureBtnWidth + 10);
+        const y = featureY + featureBtnHeight + 10;
+        drawRoundRect(x, y, featureBtnWidth, featureBtnHeight, 6, '#4a4a4a');
+        drawText(feature.name, x + featureBtnWidth/2, y + 14, 14, '#ffffff', 'center');
     });
 }
 
@@ -1709,6 +2442,120 @@ function drawLoadingScreen() {
         loadingText += (Math.sin(time - i) > 0 ? '.' : ' ');
     }
     drawText(loadingText, screenWidth / 2, iconY + iconSize + 110, 14, '#999999', 'center');
+}
+
+// ==================== 弹窗系统 ====================
+
+/**
+ * 弹窗数据
+ */
+var currentPopup = null;
+
+/**
+ * 显示统一样式的弹窗
+ * @param {Object} options - 弹窗配置
+ * @param {string} options.title - 弹窗标题
+ * @param {string} options.content - 弹窗内容
+ * @param {Array} options.buttons - 按钮配置
+ * @param {Function} options.callback - 回调函数
+ * 修复标识: FIX_POPUP_STYLE_20260327
+ */
+function showPopup(options) {
+    currentPopup = options;
+    // 强制重绘
+    drawGameInterface();
+}
+
+/**
+ * 关闭弹窗
+ * 修复标识: FIX_POPUP_STYLE_20260327
+ */
+function closePopup() {
+    currentPopup = null;
+    // 强制重绘
+    drawGameInterface();
+}
+
+/**
+ * 处理弹窗按钮点击
+ * @param {number} x - 触摸X坐标
+ * @param {number} y - 触摸Y坐标
+ * @returns {boolean} - 是否处理了事件
+ * 修复标识: FIX_POPUP_STYLE_20260327
+ */
+function handlePopupTouch(x, y) {
+    if (!currentPopup) return false;
+    
+    const popupWidth = screenWidth * 0.8;
+    const popupHeight = 200;
+    const popupX = (screenWidth - popupWidth) / 2;
+    const popupY = (screenHeight - popupHeight) / 2;
+    const buttonHeight = 40;
+    const buttonY = popupY + popupHeight - buttonHeight - 15;
+    const buttonWidth = (popupWidth - 20) / (currentPopup.buttons.length || 1);
+    
+    // 检查按钮点击
+    currentPopup.buttons.forEach((button, index) => {
+        const buttonX = popupX + 10 + index * buttonWidth;
+        if (x >= buttonX && x <= buttonX + buttonWidth && 
+            y >= buttonY && y <= buttonY + buttonHeight) {
+            if (currentPopup.callback) {
+                currentPopup.callback(button.value);
+            }
+            closePopup();
+            return true;
+        }
+    });
+    
+    return false;
+}
+
+/**
+ * 绘制弹窗
+ * 修复标识: FIX_POPUP_STYLE_20260327
+ */
+function drawPopup() {
+    if (!currentPopup) return;
+    
+    // 绘制半透明背景
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, screenWidth, screenHeight);
+    
+    // 弹窗配置
+    const popupWidth = screenWidth * 0.8;
+    const popupHeight = 200;
+    const popupX = (screenWidth - popupWidth) / 2;
+    const popupY = (screenHeight - popupHeight) / 2;
+    
+    // 绘制弹窗背景
+    drawRoundRect(popupX, popupY, popupWidth, popupHeight, 12, '#4a4a4a');
+    
+    // 绘制标题
+    drawText(currentPopup.title || '提示', popupX + popupWidth / 2, popupY + 20, 18, '#d4a853', 'center');
+    
+    // 绘制内容
+    ctx.font = '14px sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    
+    // 文本换行
+    const lines = currentPopup.content.split('\n');
+    lines.forEach((line, index) => {
+        ctx.fillText(line, popupX + popupWidth / 2, popupY + 50 + index * 20);
+    });
+    
+    // 绘制按钮
+    const buttonHeight = 40;
+    const buttonY = popupY + popupHeight - buttonHeight - 15;
+    const buttonWidth = (popupWidth - 20) / (currentPopup.buttons.length || 1);
+    
+    currentPopup.buttons.forEach((button, index) => {
+        const buttonX = popupX + 10 + index * buttonWidth;
+        const bgColor = button.isPrimary ? '#d4a453' : '#5a5a5a';
+        drawRoundRect(buttonX, buttonY, buttonWidth, buttonHeight, 8, bgColor);
+        drawText(button.text, buttonX + buttonWidth / 2, buttonY + 12, 14, '#ffffff', 'center');
+    });
 }
 
 // 立即初始化游戏
