@@ -1050,17 +1050,12 @@ function refreshRoot() {
                             // 重新加载角色信息，确保所有属性都从服务器获取
                             loadPlayerInfo();
                             
-                            // 更新游戏状态
+                            // 更新游戏状态中的跟脚信息（基础属性和衍生属性由loadPlayerInfo更新）
                             if (gameEngine && gameEngine.state && gameEngine.state.data) {
                                 if (!gameEngine.state.data.player) {
                                     gameEngine.state.data.player = {};
                                 }
                                 gameEngine.state.data.player.root = newRoot;
-                                
-                                // 更新派生属性
-                                if (data.derived) {
-                                    gameEngine.state.data.player.attributes = data.derived;
-                                }
                             }
                             
                             showPopup({
@@ -1123,17 +1118,12 @@ function refreshRoot() {
                                         // 重新加载角色信息，确保所有属性都从服务器获取
                                         loadPlayerInfo();
                                         
-                                        // 更新游戏状态
+                                        // 更新游戏状态中的跟脚信息（基础属性和衍生属性由loadPlayerInfo更新）
                                         if (gameEngine && gameEngine.state && gameEngine.state.data) {
                                             if (!gameEngine.state.data.player) {
                                                 gameEngine.state.data.player = {};
                                             }
                                             gameEngine.state.data.player.root = newRoot;
-                                            
-                                            // 更新派生属性
-                                            if (data.derived) {
-                                                gameEngine.state.data.player.attributes = data.derived;
-                                            }
                                         }
                                         
                                         resolve(data);
