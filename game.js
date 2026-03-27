@@ -1047,6 +1047,9 @@ function refreshRoot() {
                         
                         // 保存到服务端
                         saveRoot(playerId, newRoot).then(() => {
+                            // 重新加载角色信息，确保所有属性都从服务器获取
+                            loadPlayerInfo();
+                            
                             // 更新游戏状态
                             if (gameEngine && gameEngine.state && gameEngine.state.data) {
                                 if (!gameEngine.state.data.player) {
@@ -1117,6 +1120,9 @@ function refreshRoot() {
                                     
                                     // 保存到服务端
                                     saveRoot(playerId, newRoot).then(() => {
+                                        // 重新加载角色信息，确保所有属性都从服务器获取
+                                        loadPlayerInfo();
+                                        
                                         // 更新游戏状态
                                         if (gameEngine && gameEngine.state && gameEngine.state.data) {
                                             if (!gameEngine.state.data.player) {
