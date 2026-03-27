@@ -1218,17 +1218,20 @@ function saveRoot(playerId, root) {
         // 使用保存玩家游戏状态接口
         const url = CONFIG.SERVER_URL + `/api/player/${playerId}`;
         
-        console.log('保存跟脚请求:', url, { root });
+        const requestData = {
+            playerId: playerId,
+            gameState: {
+                root: root
+            },
+            lastSaveTime: new Date().toISOString()
+        };
+        
+        console.log('保存跟脚请求:', url, requestData);
         
         wx.request({
             url: url,
             method: 'POST',
-            data: {
-                gameState: {
-                    root: root
-                },
-                lastSaveTime: new Date().toISOString()
-            },
+            data: requestData,
             header: {
                 'Content-Type': 'application/json'
             },
