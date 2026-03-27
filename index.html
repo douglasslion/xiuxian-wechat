@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>修仙挂机 - 文字放置类修仙游戏</title>
+    <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- 主内容区域 -->
+        <div id="main-container">
+            <!-- 动态加载页面内容 -->
+        </div>
+    </div>
+
+    <!-- 游戏配置 -->
+    <script src="src/data/gameConfig.js"></script>
+
+    <!-- 工具模块 -->
+    <script src="src/js/csvLoader.js"></script>
+    <script src="src/js/colorManager.js"></script>
+
+    <!-- 核心模块 -->
+    <script src="src/js/gameState.js"></script>
+    <script src="src/js/trainingSystem.js"></script>
+    <script src="src/js/realmSystem.js"></script>
+    <script src="src/js/skillSystem.js"></script>
+    <script src="src/js/equipmentSystem.js"></script>
+    <script src="src/js/bodyTrainingSystem.js"></script>
+    <script src="src/js/alchemySystem.js"></script>
+    <script src="src/js/petSystem.js"></script>
+    <script src="src/js/dailyTaskSystem.js"></script>
+        <script src="src/js/giftSystem.js"></script>
+        <script src="src/js/checkinSystem.js"></script>
+        <script src="src/js/achievementSystem.js"></script>
+    <script src="src/js/marketSystem.js"></script>
+    <script src="src/js/sectSystem.js"></script>
+    <script src="src/js/towerSystem.js"></script>
+    <script src="src/js/godListSystem.js"></script>
+    <script src="src/js/martialStageSystem.js"></script>
+    <script src="src/js/uiManager.js"></script>
+    <script src="src/js/gameEngine.js"></script>
+
+    <!-- 启动游戏 -->
+    <script>
+        // 页面加载完成后启动游戏
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await startGame();
+                console.log('游戏启动成功');
+            } catch (error) {
+                console.error('游戏启动失败:', error);
+            }
+        });
+
+        // 页面关闭前保存
+        window.addEventListener('beforeunload', function() {
+            if (gameEngine) {
+                gameEngine.state.save();
+            }
+        });
+    </script>
+</body>
+</html>

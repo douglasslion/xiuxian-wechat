@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检查GameConfig</title>
+</head>
+<body>
+    <h1>检查GameConfig装备数据</h1>
+    <pre id="output"></pre>
+
+    <!-- 加载游戏配置 -->
+    <script src="src/data/gameConfig.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        output.innerHTML = 'GameConfig 加载状态: ' + (typeof GameConfig !== 'undefined' ? '成功' : '失败') + '\n';
+        
+        if (GameConfig) {
+            output.innerHTML += '\n装备数据检查:\n';
+            
+            if (GameConfig.EQUIPMENT) {
+                output.innerHTML += 'EQUIPMENT 存在\n';
+                
+                if (GameConfig.EQUIPMENT.equipmentData) {
+                    output.innerHTML += 'equipmentData 存在\n';
+                    
+                    const slotIds = ['weapon', 'armor', 'boots', 'belt', 'necklace', 'ring', 'jade', 'talisman'];
+                    
+                    slotIds.forEach(slotId => {
+                        if (GameConfig.EQUIPMENT.equipmentData[slotId]) {
+                            output.innerHTML += `\n${slotId} 装备数量: ${GameConfig.EQUIPMENT.equipmentData[slotId].length}\n`;
+                            GameConfig.EQUIPMENT.equipmentData[slotId].forEach((item, index) => {
+                                output.innerHTML += `  ${index}: ${item.id} - ${item.name}\n`;
+                            });
+                        } else {
+                            output.innerHTML += `\n${slotId} 装备数据不存在\n`;
+                        }
+                    });
+                } else {
+                    output.innerHTML += 'equipmentData 不存在\n';
+                }
+            } else {
+                output.innerHTML += 'EQUIPMENT 不存在\n';
+            }
+        }
+    </script>
+</body>
+</html>

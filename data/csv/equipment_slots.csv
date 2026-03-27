@@ -1,0 +1,9 @@
+id,name,category,quality,attribute,base_stats,color,max_enhance_level
+weapon,武器,weapon,attack,10,#9e9e9e,20
+armor,衣服,armor,defense,10,#9e9e9e,20
+boots,鞋子,boots,speed,10,#9e9e9e,20
+belt,腰带,belt,hp,10,#9e9e9e,20
+necklace,项链,necklace,hp,10,#9e9e9e,20
+ring,戒指,ring,attack,10,#9e9e9e,20
+jade,玉佩,jade,defense,10,#9e9e9e,20
+talisman,法宝,talisman,critical,10,#9e9e9e,20

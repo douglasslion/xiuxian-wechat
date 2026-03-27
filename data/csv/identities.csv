@@ -1,0 +1,4 @@
+id,name,description,exp_rate,spirit_rate,spirit_stone_rate
+mortal,凡人,普通凡人没有特殊加成,0,0,0
+rich,富家子弟,出生于富裕家庭初始灵石较多,0,0,0.5
+sect,宗门弟子,来自修仙宗门修炼速度较快,0.2,0,0

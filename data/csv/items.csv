@@ -1,0 +1,9 @@
+id,name,type,sub_type,description,icon,stackable,max_stack,effect_type,effect_value
+spirit_stone,灵石,resource,resource,修仙界的基础货币,💎,true,999999999,null,0
+immortal_stone,仙晶,resource,resource,高级货币,✨,true,999999999,null,0
+contribution,贡献点,resource,resource,宗门贡献点,🏆,true,999999999,null,0
+healing_pill,疗伤丹,consumable,pill,恢复生命力的丹药,💊,true,999,heal,100
+exp_pill,经验丹,consumable,pill,增加修炼经验的丹药,🌟,true,999,exp,1000
+enhance_stone,强化石,consumable,material,用于强化装备的材料,🔧,true,999,enhance,1
+refine_stone,洗炼石,consumable,material,用于洗炼装备属性的材料,🔮,true,999,refine,1
+breakthrough_pill,突破丹,consumable,pill,增加突破成功率的丹药,🎯,true,999,breakthrough,0.01

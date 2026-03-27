@@ -1,0 +1,20 @@
+{
+  "name": "正经修仙",
+  "version": "1.0.0",
+  "main": "check_gift_status.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/douglasslion/xiuxian-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/douglasslion/xiuxian-game/issues"
+  },
+  "homepage": "https://github.com/douglasslion/xiuxian-game#readme",
+  "description": "正经修仙微信小游戏"
+}

@@ -1,0 +1,16 @@
+id,type,target,reward_type,reward_value,quality,description
+task_alchemy_1,alchemy,5,spirit_stone,100,normal,炼制5颗丹药
+task_alchemy_2,alchemy,10,spirit_stone,200,rare,炼制10颗丹药
+task_alchemy_3,alchemy,20,spirit_stone,300,epic,炼制20颗丹药
+task_alchemy_3,alchemy,20,spirit_stone,500,epic,炼制50颗丹药
+task_alchemy_3,alchemy,20,spirit_stone,1000,epic,炼制99颗丹药
+task_battle_1,battle,10,spirit_stone,100,normal,击败10只怪物
+task_battle_2,battle,20,spirit_stone,250,rare,击败20只怪物
+task_battle_3,battle,50,spirit_stone,500,epic,击败50只怪物
+task_battle_3,battle,50,spirit_stone,1000,epic,击败99只怪物
+task_stamina_1,stamina,50,exp_pill,2,normal,消耗5点体力
+task_stamina_2,stamina,100,exp_pill,5,rare,消耗10点体力
+task_stamina_3,stamina,200,exp_pill,10,epic,消耗20点体力
+task_consume_1,consumeItem,10,enhance_stone,5,normal,消耗10个强化石
+task_consume_2,consumeItem,20,enhance_stone,15,rare,消耗50个强化石
+task_consume_3,consumeItem,50,enhance_stone,30,epic,消耗100个强化石

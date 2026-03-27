@@ -1,0 +1,4 @@
+id,name,tier,material_1,material_1_count,material_2,material_2_count,effect_type,effect_value,icon
+healing_pill,疗伤丹,1,草药,2,矿石,1,hp,100,💊
+spirit_pill,灵气丹,1,草药,3,矿石,2,spirit,50,✨
+

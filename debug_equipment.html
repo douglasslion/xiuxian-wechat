@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>装备调试</title>
+</head>
+<body>
+    <h1>装备调试工具</h1>
+    <button onclick="checkEquipment()">检查装备数据</button>
+    <button onclick="clearStorage()">清除本地存储</button>
+    <pre id="debug-output"></pre>
+
+    <script>
+        function checkEquipment() {
+            const gameState = localStorage.getItem('xiuxian_game_state');
+            const output = document.getElementById('debug-output');
+            
+            if (gameState) {
+                try {
+                    const parsed = JSON.parse(gameState);
+                    output.innerHTML = '游戏状态存在！\n';
+                    
+                    if (parsed.equipment) {
+                        output.innerHTML += '装备系统存在！\n';
+                        output.innerHTML += '装备背包长度: ' + (parsed.equipment.inventory ? parsed.equipment.inventory.length : 0) + '\n';
+                        
+                        if (parsed.equipment.inventory) {
+                            output.innerHTML += '\n装备详情:\n';
+                            parsed.equipment.inventory.forEach((item, index) => {
+                                output.innerHTML += `Item ${index}: id=${item.id}, slot=${item.slot}, type=${item.type}\n`;
+                            });
+                        }
+                    } else {
+                        output.innerHTML += '装备系统不存在！\n';
+                    }
+                } catch (error) {
+                    output.innerHTML = '解析失败: ' + error.message;
+                }
+            } else {
+                output.innerHTML = '本地存储中没有游戏状态';
+            }
+        }
+
+        function clearStorage() {
+            localStorage.removeItem('xiuxian_game_state');
+            document.getElementById('debug-output').innerHTML = '本地存储已清除！';
+        }
+
+        // 页面加载时自动检查
+        window.onload = checkEquipment;
+    </script>
+</body>
+</html>

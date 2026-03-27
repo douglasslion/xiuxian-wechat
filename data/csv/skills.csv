@@ -1,0 +1,14 @@
+id,name,category_id,quality_id,effect_type,effect_value,description
+lingqi_gathering,灵气汇聚,resource,common,spiritRate,0.1,提升灵气获取效率
+xiulian_acceleration,修炼加速,resource,good,expRate,0.15,提升修炼速度
+caifeng_shu,采风术,resource,fine,materialRate,0.2,提升材料掉落率
+tianyuan_mijing,天元秘境,resource,exquisite,spiritRate,0.3,大幅提升灵气获取
+jianqi_jue,剑气诀,attack,common,attack,10,基础攻击加成
+pomo_zhi,破魔指,attack,good,attack,25,中级攻击加成
+tianlei_yin,天雷引,attack,fine,attack,50,高级攻击加成
+wanjian_gui,万剑归宗,attack,divine,attack,200,顶级攻击功法
+tiejia_shu,铁甲术,defense,common,defense,10,基础防御加成
+jin_gang,金刚不坏,defense,good,defense,25,中级防御加成
+wuxing_dun,五行盾,defense,fine,defense,50,高级防御加成
+qiyun_shu,气运术,special,good,luck,0.1,提升幸运值
+shenshi_huifu,神识恢复,special,fine,spiritRecovery,0.2,提升神识恢复速度

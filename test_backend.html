@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后端接口测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .url-display {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 后端接口连通性测试</h1>
+        <p>测试游戏后端接口是否正常工作</p>
+
+        <div class="url-display">
+            <strong>后端服务器地址:</strong> https://xiuxian-test.richsh.cn
+        </div>
+
+        <button onclick="testConnection()">测试连接</button>
+        <button onclick="testPlayerInfo()">测试玩家信息接口</button>
+        <button onclick="testGameConfig()">测试游戏配置接口</button>
+        <button onclick="clearResults()">清除结果</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'https://xiuxian-test.richsh.cn';
+
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = message;
+            resultsDiv.insertBefore(resultDiv, resultsDiv.firstChild);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testConnection() {
+            addResult('开始测试服务器连接...', 'info');
+            const startTime = Date.now();
+
+            try {
+                // 测试服务器是否在线
+                const response = await fetch(SERVER_URL, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                if (response.ok) {
+                    addResult(`✅ 服务器连接成功！响应时间: ${responseTime}ms<br>状态码: ${response.status}`, 'success');
+                } else {
+                    addResult(`⚠️ 服务器响应异常<br>状态码: ${response.status}<br>状态: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ 连接失败: ${error.message}`, 'error');
+                addResult(`可能原因:<br>1. 服务器未启动<br>2. 网络连接问题<br>3. CORS跨域限制<br>4. SSL证书问题`, 'info');
+            }
+        }
+
+        async function testPlayerInfo() {
+            addResult('测试玩家信息接口...', 'info');
+
+            try {
+                // 测试玩家信息接口（使用示例ID）
+                const testId = 1;
+                const url = `${SERVER_URL}/api/player/info?id=${testId}`;
+
+                addResult(`请求URL: ${url}`, 'info');
+
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ 玩家信息接口调用成功！响应时间: ${responseTime}ms<br>返回数据: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    addResult(`⚠️ 玩家信息接口响应异常<br>状态码: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ 玩家信息接口请求失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGameConfig() {
+            addResult('测试游戏配置接口...', 'info');
+
+            try {
+                // 测试游戏配置接口
+                const url = `${SERVER_URL}/game/config`;
+
+                addResult(`请求URL: ${url}`, 'info');
+
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ 游戏配置接口调用成功！响应时间: ${responseTime}ms<br>返回数据: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    addResult(`⚠️ 游戏配置接口响应异常<br>状态码: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ 游戏配置接口请求失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时自动执行测试
+        window.onload = function() {
+            addResult('🔧 测试工具已加载，点击按钮开始测试', 'info');
+            setTimeout(() => testConnection(), 500);
+        };
+    </script>
+</body>
+</html>

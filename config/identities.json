@@ -1,0 +1,7 @@
+[
+  {"id": "scholar", "name": "书生", "description": "出身书香门第，博览群书，悟性较高"},
+  {"id": "warrior", "name": "武者", "description": "习武之人，体质强悍，炼体效率极高"},
+  {"id": "merchant", "name": "商贾", "description": "家族财富殷实，善于资源调配"},
+  {"id": "wanderer", "name": "浪子", "description": "经历丰富，命运多舛，运气成分较大"},
+  {"id": "hermit", "name": "隐士", "description": "避世修炼，专注学习与心法理解"}
+]

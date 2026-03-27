@@ -1,0 +1,6 @@
+id,name,attribute,bonus
+metal,金,attack,0.05
+wood,木,hp,0.05
+water,水,defense,0.05
+fire,火,crit,0.05
+earth,土,resist,0.05

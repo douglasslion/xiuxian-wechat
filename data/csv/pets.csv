@@ -1,0 +1,4 @@
+id,name,rarity,base_attack,base_defense,base_hp,base_speed,cultivation_bonus,description,icon
+pet1,小火龙,普通,10,5,50,8,0.05,一只可爱的小火龙,能够喷出火焰攻击敌人。,🐉
+pet2,小凤凰,稀有,15,8,60,10,0.15,传说中的凤凰,拥有涅槃重生的能力。,🔥
+pet3,小麒麟,史诗,20,12,80,12,0.25,祥瑞之兽麒麟,能够为主人带来好运。,✨

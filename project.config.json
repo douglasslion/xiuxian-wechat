@@ -1,0 +1,148 @@
+{
+  "description": "正经修仙微信小游戏",
+  "packOptions": {
+    "ignore": [
+      {
+        "value": ".gitignore",
+        "type": "file"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      },
+      {
+        "value": "backend",
+        "type": "folder"
+      },
+      {
+        "value": "原型图",
+        "type": "folder"
+      },
+      {
+        "value": "设定",
+        "type": "folder"
+      },
+      {
+        "value": "index.html",
+        "type": "file"
+      },
+      {
+        "value": "check_gameconfig.html",
+        "type": "file"
+      },
+      {
+        "value": "check_gift_status.js",
+        "type": "file"
+      },
+      {
+        "value": "check_local_storage.js",
+        "type": "file"
+      },
+      {
+        "value": "check_local_storage_real.js",
+        "type": "file"
+      },
+      {
+        "value": "clear_local_storage.html",
+        "type": "file"
+      },
+      {
+        "value": "debug_equipment.html",
+        "type": "file"
+      },
+      {
+        "value": "test-wechat.js",
+        "type": "file"
+      },
+      {
+        "value": "wechat-launch.js",
+        "type": "file"
+      },
+      {
+        "value": "wechat-main.js",
+        "type": "file"
+      },
+      {
+        "value": "功能说明文档.md",
+        "type": "file"
+      }
+    ],
+    "include": []
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "preloadBackgroundData": false,
+    "minified": true,
+    "newFeature": false,
+    "coverView": true,
+    "nodeModules": false,
+    "autoAudits": false,
+    "showShadowRootInWxmlPanel": true,
+    "scopeDataCheck": false,
+    "uglifyFileName": false,
+    "checkInvalidKey": true,
+    "checkSiteMap": true,
+    "uploadWithSourceMap": true,
+    "compileHotReLoad": false,
+    "useMultiFrameRuntime": true,
+    "useApiHook": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "enableEngineNative": false,
+    "bundle": false,
+    "useIsolateContext": true,
+    "useCompilerModule": true,
+    "userConfirmedUseCompilerModuleSwitch": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "compileWorklet": false,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
+  },
+  "compileType": "game",
+  "libVersion": "3.14.1",
+  "appid": "wx391952b9cfff3c27",
+  "projectname": "正经修仙",
+  "isGameTourist": false,
+  "simulatorType": "wechat",
+  "simulatorPluginLibVersion": {},
+  "condition": {
+    "search": {
+      "current": -1,
+      "list": []
+    },
+    "conversation": {
+      "current": -1,
+      "list": []
+    },
+    "game": {
+      "current": -1,
+      "list": []
+    },
+    "plugin": {
+      "current": -1,
+      "list": []
+    },
+    "gamePlugin": {
+      "current": -1,
+      "list": []
+    },
+    "miniprogram": {
+      "current": -1,
+      "list": []
+    }
+  },
+  "editorSetting": {}
+}

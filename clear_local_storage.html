@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清除本地存储</title>
+</head>
+<body>
+    <h1>清除本地存储</h1>
+    <p>点击按钮清除游戏的本地存储数据</p>
+    <button onclick="clearStorage()">清除本地存储</button>
+    <p id="message"></p>
+
+    <script>
+        function clearStorage() {
+            localStorage.removeItem('xiuxian_game_state');
+            document.getElementById('message').textContent = '本地存储已清除！请刷新游戏页面';
+            console.log('本地存储已清除');
+        }
+
+        // 检查当前存储状态
+        const gameState = localStorage.getItem('xiuxian_game_state');
+        if (gameState) {
+            console.log('当前有游戏状态存储');
+        } else {
+            console.log('当前没有游戏状态存储');
+        }
+    </script>
+</body>
+</html>

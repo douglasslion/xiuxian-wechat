@@ -1,0 +1,10 @@
+id,name,category,quality,max_level,multiplier
+resource,资源类,资源类,提升资源获取效率,0,0
+attack,攻击类,攻击类,提升攻击属性,0,0
+defense,防御类,防御类,提升防御属性,0,0
+special,特殊类,特殊类,特殊效果加成,0,0
+common,凡品,0,10,1.0
+good,良品,0,20,1.5
+fine,精品,0,30,2.0
+exquisite,绝品,0,50,3.0
+divine,神品,0,100,5.0
