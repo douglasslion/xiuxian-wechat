@@ -463,9 +463,13 @@ function handleLogin() {
                     }
 
                     wx.showToast({ title: '登录成功' });
-                    // 开始游戏
-                    loadPlayerInfo();
-                    startGame();
+                    // 开始游戏 - 等待loadPlayerInfo完成后再开始
+                    loadPlayerInfo().then(() => {
+                        startGame();
+                    }).catch((error) => {
+                        console.error('加载玩家信息失败:', error);
+                        startGame(); // 即使加载失败也继续游戏
+                    });
                 })
                 .catch(error => {
                     wx.hideLoading();
@@ -1546,119 +1550,129 @@ function drawLoginRegisterPage(ctx, width, height) {
 
 /**
  * 从后端获取玩家信息
+ * @returns {Promise} - 加载结果
  */
 function loadPlayerInfo() {
-    if (!gameEngine || !gameEngine.state || !gameEngine.state.data) {
-        return;
-    }
-
-    var playerId = gameEngine.state.data.player.id;
-    if (!playerId) {
-        return;
-    }
-
-    // 检查是否是本地生成的ID（带player_前缀），如果是则不请求后端
-    if (playerId.startsWith('player_')) {
-        console.log('使用本地生成的ID，跳过后端玩家信息请求');
-        return;
-    }
-
-    // 使用character-info接口获取完整角色信息
-    var url = CONFIG.SERVER_URL + '/api/player/character-info?id=' + playerId;
-
-    console.log('从后端请求完整角色信息:', url);
-
-    wx.request({
-        url: url,
-        method: 'GET',
-        timeout: CONFIG.API_TIMEOUT,
-        success: function(res) {
-            console.log('后端响应:', res);
-
-            if (res.statusCode === 200 && res.data && res.data.status === 'success' && res.data.data) {
-                var data = res.data.data;
-                
-                // 更新玩家基础信息 - 使用更安全的方式
-                if (data.player) {
-                    playerInfo.id = data.player.id || playerInfo.id;
-                    playerInfo.name = data.player.name || playerInfo.name;
-                    playerInfo.avatar = data.player.avatar || playerInfo.avatar;
-                    
-                    // 确保player对象存在
-                    if (!gameEngine.state.data.player) {
-                        gameEngine.state.data.player = {};
-                    }
-                    // 更新游戏状态中的玩家信息
-                    gameEngine.state.data.player.id = data.player.id || gameEngine.state.data.player.id;
-                    gameEngine.state.data.player.name = data.player.name || gameEngine.state.data.player.name;
-                    gameEngine.state.data.player.avatar = data.player.avatar || gameEngine.state.data.player.avatar;
-                }
-                
-                // 更新属性信息 - 使用更安全的方式
-                if (data.attributes) {
-                    if (!gameEngine.state.data.player) {
-                        gameEngine.state.data.player = {};
-                    }
-                    gameEngine.state.data.player.attributes = data.attributes.derived || gameEngine.state.data.player.attributes || {};
-                    gameEngine.state.data.player.baseAttributes = data.attributes.base || gameEngine.state.data.player.baseAttributes || {};
-                    gameEngine.state.data.player.root = data.attributes.root || gameEngine.state.data.player.root || {};
-                }
-                
-                // 更新境界信息 - 使用更安全的方式
-                if (data.realm) {
-                    if (!gameEngine.state.data.realm) {
-                        gameEngine.state.data.realm = {};
-                    }
-                    gameEngine.state.data.realm.name = data.realm.realmName || gameEngine.state.data.realm.name;
-                    gameEngine.state.data.realm.currentRealm = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentRealm;
-                    gameEngine.state.data.realm.currentLayer = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentLayer;
-                    gameEngine.state.data.realm.exp = data.realm.cultivationProgress !== undefined ? data.realm.cultivationProgress : gameEngine.state.data.realm.exp;
-                }
-                
-                // 更新修炼信息 - 使用更安全的方式
-                if (data.cultivation) {
-                    if (!gameEngine.state.data.training) {
-                        gameEngine.state.data.training = {};
-                    }
-                    if (!gameEngine.state.data.training.cultivation) {
-                        gameEngine.state.data.training.cultivation = {};
-                    }
-                    gameEngine.state.data.training.cultivation.active = data.cultivation.isCultivating !== undefined ? data.cultivation.isCultivating : gameEngine.state.data.training.cultivation.active;
-                    gameEngine.state.data.training.cultivation.realTimeEfficiency = data.cultivation.realTimeEfficiency !== undefined ? data.cultivation.realTimeEfficiency : gameEngine.state.data.training.cultivation.realTimeEfficiency;
-                }
-                
-                // 更新装备信息 - 使用更安全的方式
-                if (data.equipment && Array.isArray(data.equipment)) {
-                    // 确保equipment对象存在
-                    if (!gameEngine.state.data.equipment) {
-                        gameEngine.state.data.equipment = { equipped: {}, inventory: [] };
-                    }
-                    if (!gameEngine.state.data.equipment.equipped) {
-                        gameEngine.state.data.equipment.equipped = {};
-                    }
-                    
-                    // 更新装备数据
-                    data.equipment.forEach(function(item) {
-                        if (item && item.type) {
-                            gameEngine.state.data.equipment.equipped[item.type] = item;
-                        }
-                    });
-                }
-
-                console.log('成功获取并更新完整角色信息:', playerInfo);
-                
-                // 强制触发界面更新 - 使用requestAnimationFrame确保在下一帧绘制
-                requestAnimationFrame(function() {
-                    drawHomePage();
-                });
-            } else {
-                console.warn('后端返回数据格式错误:', res);
-            }
-        },
-        fail: function(err) {
-            console.warn('请求后端失败:', err);
-            // 接口调用失败不影响游戏正常运行
+    return new Promise((resolve, reject) => {
+        if (!gameEngine || !gameEngine.state || !gameEngine.state.data) {
+            resolve();
+            return;
         }
+
+        var playerId = gameEngine.state.data.player.id;
+        if (!playerId) {
+            resolve();
+            return;
+        }
+
+        // 检查是否是本地生成的ID（带player_前缀），如果是则不请求后端
+        if (playerId.startsWith('player_')) {
+            console.log('使用本地生成的ID，跳过后端玩家信息请求');
+            resolve();
+            return;
+        }
+
+        // 使用character-info接口获取完整角色信息
+        var url = CONFIG.SERVER_URL + '/api/player/character-info?id=' + playerId;
+
+        console.log('从后端请求完整角色信息:', url);
+
+        wx.request({
+            url: url,
+            method: 'GET',
+            timeout: CONFIG.API_TIMEOUT,
+            success: function(res) {
+                console.log('后端响应:', res);
+
+                if (res.statusCode === 200 && res.data && res.data.status === 'success' && res.data.data) {
+                    var data = res.data.data;
+                    
+                    // 更新玩家基础信息 - 使用更安全的方式
+                    if (data.player) {
+                        playerInfo.id = data.player.id || playerInfo.id;
+                        playerInfo.name = data.player.name || playerInfo.name;
+                        playerInfo.avatar = data.player.avatar || playerInfo.avatar;
+                        
+                        // 确保player对象存在
+                        if (!gameEngine.state.data.player) {
+                            gameEngine.state.data.player = {};
+                        }
+                        // 更新游戏状态中的玩家信息
+                        gameEngine.state.data.player.id = data.player.id || gameEngine.state.data.player.id;
+                        gameEngine.state.data.player.name = data.player.name || gameEngine.state.data.player.name;
+                        gameEngine.state.data.player.avatar = data.player.avatar || gameEngine.state.data.player.avatar;
+                    }
+                    
+                    // 更新属性信息 - 使用更安全的方式
+                    if (data.attributes) {
+                        if (!gameEngine.state.data.player) {
+                            gameEngine.state.data.player = {};
+                        }
+                        gameEngine.state.data.player.attributes = data.attributes.derived || gameEngine.state.data.player.attributes || {};
+                        gameEngine.state.data.player.baseAttributes = data.attributes.base || gameEngine.state.data.player.baseAttributes || {};
+                        gameEngine.state.data.player.root = data.attributes.root || gameEngine.state.data.player.root || {};
+                    }
+                    
+                    // 更新境界信息 - 使用更安全的方式
+                    if (data.realm) {
+                        if (!gameEngine.state.data.realm) {
+                            gameEngine.state.data.realm = {};
+                        }
+                        gameEngine.state.data.realm.name = data.realm.realmName || gameEngine.state.data.realm.name;
+                        gameEngine.state.data.realm.currentRealm = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentRealm;
+                        gameEngine.state.data.realm.currentLayer = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentLayer;
+                        gameEngine.state.data.realm.exp = data.realm.cultivationProgress !== undefined ? data.realm.cultivationProgress : gameEngine.state.data.realm.exp;
+                    }
+                    
+                    // 更新修炼信息 - 使用更安全的方式
+                    if (data.cultivation) {
+                        if (!gameEngine.state.data.training) {
+                            gameEngine.state.data.training = {};
+                        }
+                        if (!gameEngine.state.data.training.cultivation) {
+                            gameEngine.state.data.training.cultivation = {};
+                        }
+                        gameEngine.state.data.training.cultivation.active = data.cultivation.isCultivating !== undefined ? data.cultivation.isCultivating : gameEngine.state.data.training.cultivation.active;
+                        gameEngine.state.data.training.cultivation.realTimeEfficiency = data.cultivation.realTimeEfficiency !== undefined ? data.cultivation.realTimeEfficiency : gameEngine.state.data.training.cultivation.realTimeEfficiency;
+                    }
+                    
+                    // 更新装备信息 - 使用更安全的方式
+                    if (data.equipment && Array.isArray(data.equipment)) {
+                        // 确保equipment对象存在
+                        if (!gameEngine.state.data.equipment) {
+                            gameEngine.state.data.equipment = { equipped: {}, inventory: [] };
+                        }
+                        if (!gameEngine.state.data.equipment.equipped) {
+                            gameEngine.state.data.equipment.equipped = {};
+                        }
+                        
+                        // 更新装备数据
+                        data.equipment.forEach(function(item) {
+                            if (item && item.type) {
+                                gameEngine.state.data.equipment.equipped[item.type] = item;
+                            }
+                        });
+                    }
+
+                    console.log('成功获取并更新完整角色信息:', playerInfo);
+                    
+                    // 强制触发界面更新 - 使用requestAnimationFrame确保在下一帧绘制
+                    requestAnimationFrame(function() {
+                        drawHomePage();
+                    });
+                    
+                    resolve();
+                } else {
+                    console.warn('后端返回数据格式错误:', res);
+                    resolve();
+                }
+            },
+            fail: function(err) {
+                console.warn('请求后端失败:', err);
+                // 接口调用失败不影响游戏正常运行
+                resolve();
+            }
+        });
     });
 }
 
