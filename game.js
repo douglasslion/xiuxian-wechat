@@ -926,7 +926,9 @@ function drawAttributesPage() {
             spiritRootInfo += ' (修炼加成: ' + (root.bonus * 100).toFixed(0) + '%)';
         }
     }
-    drawText(spiritRootInfo, contentX + 15, rootY + 40, 14, '#ffffff');
+    // 使用后端返回的rankColor颜色显示跟脚信息
+    const rootColor = root.rankColor || '#ffffff';
+    drawText(spiritRootInfo, contentX + 15, rootY + 40, 14, rootColor);
     
     if (root.description) {
         drawText(root.description, contentX + 15, rootY + 60, 11, '#999999');
