@@ -804,6 +804,68 @@ function stopCultivation() {
     });
 }
 
+/**
+ * 突破功能
+ * 修复标识: FIX_BREAKTHROUGH_20260330
+ */
+function breakthrough() {
+    return new Promise((resolve, reject) => {
+        if (!gameEngine || !gameEngine.state || !gameEngine.state.data || !gameEngine.state.data.player || !gameEngine.state.data.player.id) {
+            const error = new Error('玩家信息不存在');
+            console.error('突破失败:', error);
+            reject(error);
+            return;
+        }
+        
+        const playerId = gameEngine.state.data.player.id;
+        const url = CONFIG.SERVER_URL + '/api/player/realm/breakthrough';
+        
+        console.log('突破请求:', url, { playerId });
+        
+        wx.showLoading({ title: '突破中...' });
+        
+        wx.request({
+            url: url,
+            method: 'POST',
+            data: {
+                playerId: playerId
+            },
+            header: {
+                'Content-Type': 'application/json'
+            },
+            timeout: CONFIG.API_TIMEOUT,
+            success: function(res) {
+                wx.hideLoading();
+                console.log('突破响应:', res);
+                
+                if (res.data && res.data.status === 'success') {
+                    const data = res.data.data;
+                    
+                    // 重新从服务器获取最新的角色信息
+                    console.log('重新获取最新角色信息...');
+                    loadPlayerInfo();
+                    
+                    wx.showToast({ title: '突破成功' });
+                    resolve(data);
+                } else {
+                    let errorMessage = '突破失败';
+                    if (res.data && res.data.message) {
+                        errorMessage = res.data.message;
+                    }
+                    wx.showModal({ title: '错误', content: errorMessage });
+                    reject(new Error(errorMessage));
+                }
+            },
+            fail: function(err) {
+                wx.hideLoading();
+                console.error('突破请求失败:', err);
+                wx.showModal({ title: '错误', content: '网络请求失败' });
+                reject(new Error('网络请求失败'));
+            }
+        });
+    });
+}
+
 // ==================== 页面状态管理 ====================
 
 /**
@@ -1625,6 +1687,7 @@ function loadPlayerInfo() {
                         gameEngine.state.data.realm.currentRealm = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentRealm;
                         gameEngine.state.data.realm.currentLayer = data.realm.realmLevel !== undefined ? data.realm.realmLevel : gameEngine.state.data.realm.currentLayer;
                         gameEngine.state.data.realm.exp = data.realm.cultivationProgress !== undefined ? data.realm.cultivationProgress : gameEngine.state.data.realm.exp;
+                        gameEngine.state.data.realm.canBreakthrough = data.realm.canBreakthrough !== undefined ? data.realm.canBreakthrough : gameEngine.state.data.realm.canBreakthrough;
                     }
                     
                     // 更新修炼信息 - 使用更安全的方式
@@ -1664,6 +1727,24 @@ function loadPlayerInfo() {
                     requestAnimationFrame(function() {
                         drawHomePage();
                     });
+                    
+                    // 设置定时获取角色信息的定时器
+                    if (data.cultivation && data.cultivation.expInterval) {
+                        const expInterval = data.cultivation.expInterval * 1000; // 转换为毫秒
+                        
+                        // 清除之前的定时器（如果存在）
+                        if (window.cultivationTimer) {
+                            clearInterval(window.cultivationTimer);
+                        }
+                        
+                        // 设置新的定时器
+                        window.cultivationTimer = setInterval(() => {
+                            console.log('定时获取最新角色信息...');
+                            loadPlayerInfo();
+                        }, expInterval);
+                        
+                        console.log('定时获取角色信息已设置，间隔:', expInterval, '毫秒');
+                    }
                     
                     resolve();
                 } else {
@@ -1943,10 +2024,14 @@ function handleGameTouch(e) {
     if (x >= 15 + smallBtnWidth + 10 + mainBtnWidth + 10 && x <= 15 + smallBtnWidth + 10 + mainBtnWidth + 10 + smallBtnWidth && 
         y >= buttonY && y <= buttonY + buttonHeight) {
         console.log('点击了突破按钮');
-        wx.showToast({
-            title: '突破功能开发中',
-            icon: 'none'
-        });
+        if (gameEngine && gameEngine.state && gameEngine.state.data && gameEngine.state.data.player && gameEngine.state.data.player.id) {
+            breakthrough();
+        } else {
+            wx.showToast({
+                title: '玩家信息不存在，无法突破',
+                icon: 'none'
+            });
+        }
         return;
     }
     
@@ -2367,7 +2452,11 @@ function drawHomePage() {
     drawText(mainBtnText, 15 + smallBtnWidth + 10 + mainBtnWidth/2, buttonY + 12, 13, '#ffffff', 'center');
 
     // 突破按钮
-    drawRoundRect(15 + smallBtnWidth + 10 + mainBtnWidth + 10, buttonY, smallBtnWidth, buttonHeight, 20, '#5a5a5a');
+    let breakthroughBtnColor = '#5a5a5a';
+    if (state.realm && state.realm.canBreakthrough) {
+        breakthroughBtnColor = '#d4a853'; // 高亮显示
+    }
+    drawRoundRect(15 + smallBtnWidth + 10 + mainBtnWidth + 10, buttonY, smallBtnWidth, buttonHeight, 20, breakthroughBtnColor);
     drawText('突破', 15 + smallBtnWidth + 10 + mainBtnWidth + 10 + smallBtnWidth/2, buttonY + 12, 13, '#ffffff', 'center');
 
     // ==================== 底部功能按钮 ====================
