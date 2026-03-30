@@ -287,7 +287,9 @@ class GameEngine {
      * 检查离线收益
      */
     checkOfflineProgress() {
-        if (this.state && typeof this.state.calculateOfflineProgress === 'function') {
+        // 只有已登录时才检查离线收益
+        const isLoggedIn = typeof wx !== 'undefined' && wx.getStorageSync && wx.getStorageSync('login_token');
+        if (isLoggedIn && this.state && typeof this.state.calculateOfflineProgress === 'function') {
             this.state.calculateOfflineProgress();
         }
     }

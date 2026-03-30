@@ -68,14 +68,15 @@ console.log('启动参数:', launchOptions);
 wx.onShow(function() {
     console.log('游戏页面显示');
 
-    // 恢复游戏状态
-    if (gameEngine && gameEngine.state) {
+    // 只有已登录时才执行相关操作
+    if (isLoggedIn && gameEngine && gameEngine.state) {
+        // 恢复游戏状态
         gameEngine.state.calculateOfflineProgress();
-    }
 
-    // 重新加载玩家信息
-    if (gameEngine && gameEngine.state && gameEngine.state.data) {
-        loadPlayerInfo();
+        // 重新加载玩家信息
+        if (gameEngine.state.data) {
+            loadPlayerInfo();
+        }
     }
 });
 
@@ -1467,7 +1468,7 @@ function drawLoginRegisterPage(ctx, width, height) {
     ctx.fillStyle = '#d4a853';
     ctx.font = '24px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('修仙之路', width / 2, panelY + 40);
+    ctx.fillText('正经修仙', width / 2, panelY + 40);
     
     // 绘制提示文本
     ctx.fillStyle = '#ffffff';
