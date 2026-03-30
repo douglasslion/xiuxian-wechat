@@ -1637,6 +1637,7 @@ function loadPlayerInfo() {
                         }
                         gameEngine.state.data.training.cultivation.active = data.cultivation.isCultivating !== undefined ? data.cultivation.isCultivating : gameEngine.state.data.training.cultivation.active;
                         gameEngine.state.data.training.cultivation.realTimeEfficiency = data.cultivation.realTimeEfficiency !== undefined ? data.cultivation.realTimeEfficiency : gameEngine.state.data.training.cultivation.realTimeEfficiency;
+                        gameEngine.state.data.training.cultivation.expInterval = data.cultivation.expInterval !== undefined ? data.cultivation.expInterval : gameEngine.state.data.training.cultivation.expInterval;
                     }
                     
                     // 更新装备信息 - 使用更安全的方式
@@ -2358,7 +2359,8 @@ function drawHomePage() {
     let mainBtnColor = '#d4a853';
     if (state.training && state.training.cultivation && state.training.cultivation.active) {
         const efficiency = state.training.cultivation.realTimeEfficiency || 0;
-        mainBtnText = `效率: ${Math.floor(efficiency * 30)}/30秒`;
+        const expInterval = state.training.cultivation.expInterval || 30;
+        mainBtnText = `${efficiency}/${expInterval}秒`;
         mainBtnColor = '#5a5a5a';
     }
     drawRoundRect(15 + smallBtnWidth + 10, buttonY, mainBtnWidth, buttonHeight, 4, mainBtnColor);
