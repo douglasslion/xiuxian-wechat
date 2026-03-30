@@ -277,8 +277,13 @@ class GameEngine {
             });
             
             wx.onShow(() => {
-                console.log('页面显示，检查离线收益');
-                this.checkOfflineProgress();
+                console.log('页面显示');
+                // 只有已登录时才检查离线收益
+                const isLoggedIn = typeof wx !== 'undefined' && wx.getStorageSync && wx.getStorageSync('login_token');
+                if (isLoggedIn) {
+                    console.log('检查离线收益');
+                    this.checkOfflineProgress();
+                }
             });
         }
     }
@@ -287,9 +292,7 @@ class GameEngine {
      * 检查离线收益
      */
     checkOfflineProgress() {
-        // 只有已登录时才检查离线收益
-        const isLoggedIn = typeof wx !== 'undefined' && wx.getStorageSync && wx.getStorageSync('login_token');
-        if (isLoggedIn && this.state && typeof this.state.calculateOfflineProgress === 'function') {
+        if (this.state && typeof this.state.calculateOfflineProgress === 'function') {
             this.state.calculateOfflineProgress();
         }
     }
