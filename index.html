@@ -47,7 +47,7 @@
         // 页面加载完成后启动游戏
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                await startGame();
+                initGame();
                 console.log('游戏启动成功');
             } catch (error) {
                 console.error('游戏启动失败:', error);
