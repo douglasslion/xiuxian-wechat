@@ -2232,19 +2232,8 @@ function drawHomePage() {
     // 计算修炼进度
     const requiredExp = Math.floor(realmConfig.baseExp * Math.pow(realmConfig.expMultiplier, realm.currentLayer - 1));
     
-    // 计算当前实际修为值（包括修炼中获得的额外修为）
+    // 直接使用后端返回的经验值，不进行本地计算
     let currentExp = realm.exp;
-    if (state.training && state.training.cultivation && state.training.cultivation.active && 
-        state.training.cultivation.startTime && state.training.cultivation.realTimeEfficiency) {
-        const startTime = new Date(state.training.cultivation.startTime).getTime();
-        const currentTime = Date.now();
-        const elapsedSeconds = (currentTime - startTime) / 1000;
-        const efficiency = state.training.cultivation.realTimeEfficiency;
-        const updateInterval = 20;
-        const completedIntervals = Math.floor(elapsedSeconds / updateInterval);
-        const additionalExp = completedIntervals * updateInterval * efficiency;
-        currentExp = realm.exp + additionalExp;
-    }
     
     let progress = currentExp / requiredExp;
     if (progress > 1) progress = 1;
@@ -2353,7 +2342,7 @@ function drawHomePage() {
     const characterX = equipX + equipWidth + 10;
     
     // 境界显示（顶部居中）
-    const realmText = (realmConfig.name || '凡人境') + ' · ' + (realm.currentLayer || 1) + '层';
+    const realmText = (realm.name || realmConfig.name || '凡人境') + ' · ' + (realm.currentLayer || 1) + '层';
     drawText(realmText, characterX + characterWidth/2, mainY - 5, 16, '#d4a853', 'center');
 
     // 角色形象 - 使用role.png并添加呼吸效果
